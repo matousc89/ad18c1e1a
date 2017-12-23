@@ -80,132 +80,155 @@ def sample_entropy(x, m=2, r=0, distance="chebyshev"):
 np.random.seed(101)
 change_number = 200 # 200
 change_samples = 1000
-positive_samples = 500
+positive_samples = int(change_samples/2)
 skip_on_start = 20000 #20000
 n = 10
 system = 1
 skip_tests = 10
 
-
-## precalculated stuff an data generating
-total_len = change_number * change_samples
-
-# inputs
-x = np.random.normal(0, 1, (total_len, n))
-
-# parameters
-h = np.random.normal(0, 1, (change_number, n))
-h = np.repeat(h, change_samples, axis=0)
-
-# output
-v = np.random.normal(0, 1., total_len)
-d = np.sum(x * h, axis=1) + v
-
-## plot of changes in data changes
-# for k in range(change_number):
-#     plt.axvline(k*change_samples, color='k', linestyle='--')
-# plt.plot(d[:])
-# plt.xlim(0, 10000)
-# plt.tight_layout()
-# plt.show()
-
-
-## ADAPTIVE FILTER STUFF (for LE and ELBND)
-f = pa.filters.FilterNLMS(n=n, mu=1.5, w="zeros")
-y, e, w = f.run(d, x)
-dw = np.zeros(w.shape)
-dw[0:-1] = np.abs(np.diff(w, axis=0))
-e = abs(e)
-dw = abs(dw)
-
-# get ELBND
-elbnd = pa.detection.ELBND(w, e, function="sum")
-
-# get LE
-le = pa.detection.learning_entropy(w, m=1000, order=1, alpha=[6., 6.5, 7., 7.5, 8., 8.5, 9., 9.5, 10.])
-
-## SAMPLE ENTROPY STUFF - too slow to be enabled all the time
-
-# get SE
-# se = sample_entropy(d, m=2)
-
-# FUZZY SYSTEMS
-# ....
-
-
-
-## OBSOLETE STUFF USEFULL IN FUTURE
-# # get correlations
-# for idx in range(dw.shape[1]):
-#     print(np.corrcoef(abs(e[skip_on_start:]), abs(dw[skip_on_start:,idx]))[0,1])
-
-# ## normalization not used this time
-# print(np.mean(e), np.std(e))
-# print(np.mean(dw), np.std(dw))
-# print(np.mean(elbnd), np.std(elbnd))
-# norma = 3
-# #e = e / np.mean(e) / norma
-# dw = dw / np.mean(dw) / norma
-# elbnd = elbnd / np.mean(elbnd) / norma
-# k = 1
-# x0 = 6
-# #e = 1 / (1 + np.exp(-k*(e-x0)))
-# dw = 1 / (1 + np.exp(-k*(dw-x0)))
-# elbnd = 1 / (1 + np.exp(-k*(elbnd-x0)))
-
-## DATA FOR REPRESENTATION
-methods = [
-    {"name": "LE", "data": le, "line": "b"},
-    {"name": "ELBND", "data": elbnd, "line": "g"},
-    {"name": "ERR", "data": e, "line": "k"}
-    # {"name": "SE", "data": se, "line": "r"}, # will be enabled in final test
+setups = [
+    {"drift":"ramp"},
+    {"drift":"sinus"},
+    {"drift":"both"},
 ]
-for method in methods:
-    method["reduced"] = np.zeros(change_number*2)
+
+for setup in setups:
+    print(setup["drift"])
 
 
-# plot ROC for all active methods
-actual_values = signalz.steps(1, [1,0], repeat=change_number)
-for idx in range(change_number):
-    start = idx * change_samples
-    end = (idx+1) * change_samples
+    ## precalculated stuff an data generating
+    total_len = change_number * change_samples
+
+    # inputs
+    x = np.random.normal(0, 1, (total_len, n))
+
+    # parameters
+    h = np.random.normal(0, 1, (change_number, n))
+    h = np.repeat(h, change_samples, axis=0)
+
+    # output
+    v = np.random.normal(0, 1, total_len)
+    d = np.sum(x * h, axis=1) + v
+
+    if setup["drift"] in ["ramp", "both"]:
+        d += np.linspace(0, 2, total_len)
+    if setup["drift"] in ["sinus", "both"]:
+        d += signalz.sinus(total_len, period=100000, amplitude=4)
+
+
+    print("SNR: ", SNR(d,v))
+
+
+    ## plot of changes in data changes
+    # for k in range(change_number):
+    #     plt.axvline(k*change_samples, color='k', linestyle='--')
+    # plt.plot(d[:])
+    # plt.xlim(0, 10000)
+    # plt.tight_layout()
+    # plt.show()
+
+    # nn = len([x[0][i] * x[0][j] for i in range(n) for j in range(n) if i > j])
+    # xx = np.zeros((total_len, nn))
+    # for idx in range(total_len):
+    #     xx[idx] = [x[idx][i] * x[idx][j] for i in range(n) for j in range(n) if i > j]
+    # f = pa.filters.FilterNLMS(n=nn, mu=1.0, w="zeros")
+    # y, e, w = f.run(d, xx)
+
+    #
+    ## ADAPTIVE FILTER STUFF (for LE and ELBND)
+    # x = np.append(x, np.ones((total_len, 1)), axis=1)
+    f = pa.filters.FilterNLMS(n=n, mu=1., w="zeros")
+    y, e, w = f.run(d, x)
+    dw = np.zeros(w.shape)
+    dw[0:-1] = np.abs(np.diff(w, axis=0))
+    e = abs(e)
+    dw = abs(dw)
+
+    # get ELBND
+    elbnd = pa.detection.ELBND(w, e, function="sum")
+
+    # get LE
+    le = pa.detection.learning_entropy(w, m=1000, order=1, alpha=[6., 6.5, 7., 7.5, 8., 8.5, 9., 9.5, 10.])
+
+    ## SAMPLE ENTROPY STUFF - too slow to be enabled all the time
+
+    # get SE
+    # se = sample_entropy(d, m=2)
+
+    # FUZZY SYSTEMS
+    # ....
+
+
+
+    ## OBSOLETE STUFF USEFULL IN FUTURE
+    # # get correlations
+    # for idx in range(dw.shape[1]):
+    #     print(np.corrcoef(abs(e[skip_on_start:]), abs(dw[skip_on_start:,idx]))[0,1])
+
+    # ## normalization not used this time
+    # print(np.mean(e), np.std(e))
+    # print(np.mean(dw), np.std(dw))
+    # print(np.mean(elbnd), np.std(elbnd))
+    # norma = 3
+    # #e = e / np.mean(e) / norma
+    # dw = dw / np.mean(dw) / norma
+    # elbnd = elbnd / np.mean(elbnd) / norma
+    # k = 1
+    # x0 = 6
+    # #e = 1 / (1 + np.exp(-k*(e-x0)))
+    # dw = 1 / (1 + np.exp(-k*(dw-x0)))
+    # elbnd = 1 / (1 + np.exp(-k*(elbnd-x0)))
+
+    ## DATA FOR REPRESENTATION
+    methods = [
+        {"name": "LE", "data": le, "line": "b"},
+        {"name": "ELBND", "data": elbnd, "line": "g"},
+        {"name": "ERR", "data": e, "line": "k"}
+        # {"name": "SE", "data": se, "line": "r"}, # will be enabled in final test
+    ]
     for method in methods:
-        method["reduced"][(idx*2)] = method["data"][start:start+positive_samples].max()
-        method["reduced"][(idx*2)+1] = method["data"][start+positive_samples:end].max()
-for method in methods:
-    method["sen"], method["spe"], method["acc"], method["auroc"] = roc_curve(method["reduced"][skip_tests:], actual_values[skip_tests:], steps=100)
-    plt.plot(1-method["spe"], method["sen"], method["line"])
-    print(method["name"], "\t", method["acc"].max(), "\t", method["auroc"])
-plt.show()
+        method["reduced"] = np.zeros(change_number*2)
 
 
+    # plot ROC for all active methods
+    actual_values = signalz.steps(1, [1,0], repeat=change_number)
+    for idx in range(change_number):
+        start = idx * change_samples
+        end = (idx+1) * change_samples
+        for method in methods:
+            method["reduced"][(idx*2)] = method["data"][start:start+positive_samples].max()
+            method["reduced"][(idx*2)+1] = method["data"][start+positive_samples:end].max()
+    for method in methods:
+        method["sen"], method["spe"], method["acc"], method["auroc"] = roc_curve(method["reduced"][skip_tests:], actual_values[skip_tests:], steps=100)
+        plt.plot(1-method["spe"], method["sen"], method["line"])
+        print(method["name"], "\t", method["acc"].max(), "\t", method["auroc"])
+    # plt.show()
 
-# some usefull stuff for debuging in plots
-# actual_rule = np.zeros(change_samples)
-# actual_rule[:positive_samples] = 1
-# actual_rule = signalz.steps(1, actual_rule, repeat=change_number)
-
-# ax1 = plt.subplot(511)
-# plt.plot(d[skip_on_start:])
-# plt.plot(y[skip_on_start:])
-#
-# # plt.subplot(512, sharex=ax1)
-#
-#
-#
-# # plt.subplot(513, sharex=ax1)
-# # plt.plot(se[skip_on_start:])
-# # plt.plot(actual_rule[skip_on_start:])
-# # plt.title("SE")
-#
-# plt.subplot(514, sharex=ax1)
-# plt.plot(elbnd[skip_on_start:])
-# plt.title("ELBND")
-# # plt.plot(actual_rule[skip_on_start:])
-#
-# plt.subplot(515, sharex=ax1)
-# plt.plot(le[skip_on_start:])
-# plt.title("LE")
-#
-# plt.tight_layout()
-# plt.show()
+    #
+    # # some usefull stuff for debuging in plots
+    # actual_rule = np.zeros(change_samples)
+    # actual_rule[:positive_samples] = 1
+    # actual_rule = signalz.steps(1, actual_rule, repeat=change_number)
+    #
+    # ax1 = plt.subplot(511)
+    # plt.plot(d[skip_on_start:])
+    # plt.plot(y[skip_on_start:])
+    #
+    # # plt.subplot(512, sharex=ax1)
+    #
+    # # plt.subplot(513, sharex=ax1)
+    # # plt.plot(se[skip_on_start:])
+    # # plt.plot(actual_rule[skip_on_start:])
+    # # plt.title("SE")
+    #
+    # plt.subplot(514, sharex=ax1)
+    # plt.plot(elbnd[skip_on_start:])
+    # plt.title("ELBND")
+    # # plt.plot(actual_rule[skip_on_start:])
+    #
+    # plt.subplot(515, sharex=ax1)
+    # plt.plot(le[skip_on_start:])
+    # plt.title("LE")
+    #
+    # plt.tight_layout()
+    # plt.show()

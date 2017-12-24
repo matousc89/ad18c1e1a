@@ -80,11 +80,39 @@ def sample_entropy(x, m=2, r=0, distance="chebyshev"):
 np.random.seed(101)
 change_number = 500 # 200
 change_samples = 500
-positive_samples = int(change_samples/2)
+positive_samples = 50
+neutral_samples = 0
 skip_on_start = 20000 #20000
 n = 10
 system = 1
 skip_tests = 10
+
+## precalculated stuff an data generating
+total_len = change_number * change_samples
+
+
+## DEBUG stuff
+# f = pa.filters.FilterNLMS(n=n, mu=1., w="zeros")
+# y, e, w = f.run(d, x)
+#
+# # some usefull stuff for debuging in plots
+# actual_rule = np.zeros(change_samples)
+# actual_rule[:positive_samples] = 1
+# actual_rule = signalz.steps(1, actual_rule, repeat=change_number)
+#
+# plt.plot(y)
+# plt.plot(d)
+# plt.plot(actual_rule)
+# plt.show()
+
+
+# x, peaks = signalz.ecgsyn(n=2000, hrmean=50, hrstd=3, sfecg=128)
+# np.savetxt('data_eeg.txt', x, delimiter=',')
+# print(len(x))
+# plt.plot(x)
+# plt.show()
+
+
 
 setups = [
     {"drift": "none", "plot_pos": 221},
@@ -101,28 +129,23 @@ for setup in setups:
 
     # print(setup["drift"])
 
-
-    ## precalculated stuff an data generating
-    total_len = change_number * change_samples
-
-    # inputs
-    x = np.random.normal(0, 1, (total_len, n))
-
-    # parameters
-    h = np.random.normal(0, 1, (change_number, n))
-    h = np.repeat(h, change_samples, axis=0)
-
-    # output
-    v = np.random.normal(0, 1, total_len)
-    d = np.sum(x * h, axis=1) + v
+    d = np.loadtxt("data_eeg.txt")[:total_len]*5
+    for idx in range(1, change_number):
+        d[idx * change_samples] += np.random.normal(0, 1)
+    x_d = pa.input_from_history(d, n)[:-1]
+    d_d = d[n:]
+    x = np.zeros((total_len, n))
+    d = np.zeros(total_len)
+    x[n:] = x_d
+    d[n:] = d_d
 
     if setup["drift"] in ["ramp", "both"]:
-        d += np.linspace(0, 2, total_len)
+        d += np.linspace(0, 1, total_len)
     if setup["drift"] in ["sinus", "both"]:
-        d += signalz.sinus(total_len, period=100000, amplitude=4)
+        d += signalz.sinus(total_len, period=100000, amplitude=1)
 
 
-    print("SNR: ", SNR(d,v))
+    # print("SNR: ", SNR(d,v))
 
 
     ## plot of changes in data changes
@@ -203,7 +226,7 @@ for setup in setups:
         end = (idx+1) * change_samples
         for method in methods:
             method["reduced"][(idx*2)] = method["data"][start:start+positive_samples].max()
-            method["reduced"][(idx*2)+1] = method["data"][start+positive_samples:end].max()
+            method["reduced"][(idx*2)+1] = method["data"][start+positive_samples+neutral_samples:end].max()
 
     # printing
     for method in methods:

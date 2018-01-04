@@ -115,10 +115,10 @@ total_len = change_number * change_samples
 
 
 setups = [
-    {"drift": "none", "plot_pos": 221},
-    {"drift":"ramp", "plot_pos": 222},
-    {"drift":"sinus", "plot_pos": 223},
-    {"drift":"both", "plot_pos": 224},
+    {"drift": "none", "plot_pos": 221, "drift_label": "none"},
+    {"drift":"ramp", "plot_pos": 222, "drift_label": "ramp"},
+    {"drift":"sinus", "plot_pos": 223, "drift_label": "sinus waves"},
+    {"drift":"both", "plot_pos": 224, "drift_label": "ramp + sinus_waves"},
 ]
 
 plt.figure(figsize=(15,7.5))
@@ -210,11 +210,20 @@ for setup in setups:
 
     ## DATA FOR REPRESENTATION
     methods = [
-        {"name": "LE", "data": le, "line": "b"},
-        {"name": "ELBND", "data": elbnd, "line": "g"},
+        {"name": "LE", "data": le, "line": "--k"},
+        {"name": "ELBND", "data": elbnd, "line": ":k"},
         {"name": "ERR", "data": e, "line": "k"}
         # {"name": "SE", "data": se, "line": "r"}, # will be enabled in final test
     ]
+
+    # methods = [
+    #     {"name": "LE", "data": le, "line": "b"},
+    #     {"name": "ELBND", "data": elbnd, "line": "g"},
+    #     {"name": "ERR", "data": e, "line": "k"}
+    #     # {"name": "SE", "data": se, "line": "r"}, # will be enabled in final test
+    # ]
+
+
     for method in methods:
         method["reduced"] = np.zeros(change_number*2)
 
@@ -241,8 +250,8 @@ for setup in setups:
     for method in methods:
         plt.plot(1 - method["spe"], method["sen"], method["line"], label=method["name"])
 
-    plt.legend()
-    plt.title("Drift type: " + setup["drift"])
+    plt.legend(loc=4)
+    plt.title("Drift type: " + setup["drift_label"])
     plt.xlabel("1 - specificity")
     plt.ylabel("sensitivity")
     plt.xlim(0,1)
@@ -278,4 +287,6 @@ for setup in setups:
     # plt.show()
 
 plt.tight_layout()
+plt.savefig("figs/fig2.png")
+
 plt.show()

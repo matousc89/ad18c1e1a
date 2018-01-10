@@ -78,9 +78,9 @@ def sample_entropy(x, m=2, r=0, distance="chebyshev"):
 
 ## inputs
 np.random.seed(101)
-change_number = 500 # 200
-change_samples = 500
-positive_samples = 50
+change_number = 500 # 500
+change_samples = 500 # 500
+positive_samples = 50 # 50
 neutral_samples = 0
 skip_on_start = 20000 #20000
 n = 10
@@ -121,7 +121,8 @@ setups = [
     {"drift":"both", "plot_pos": 224, "drift_label": "ramp + sinus_waves"},
 ]
 
-plt.figure(figsize=(15,7.5))
+plt.figure(figsize=(15,11))
+
 
 
 for setup in setups:
@@ -130,6 +131,9 @@ for setup in setups:
     # print(setup["drift"])
 
     d = np.loadtxt("data_eeg.txt")[:total_len]*5
+
+    # print(np.mean(d), np.std(d))
+
     for idx in range(1, change_number):
         d[idx * change_samples] += np.random.normal(0, 1)
     x_d = pa.input_from_history(d, n)[:-1]
@@ -140,9 +144,9 @@ for setup in setups:
     d[n:] = d_d
 
     if setup["drift"] in ["ramp", "both"]:
-        d += np.linspace(0, 1, total_len)
+        d += np.linspace(0, 3, total_len)
     if setup["drift"] in ["sinus", "both"]:
-        d += signalz.sinus(total_len, period=100000, amplitude=1)
+        d += signalz.sinus(total_len, period=100000, amplitude=3)
 
 
     # print("SNR: ", SNR(d,v))
@@ -211,9 +215,9 @@ for setup in setups:
     ## DATA FOR REPRESENTATION
     methods = [
         {"name": "LE", "data": le, "line": "--k"},
-        {"name": "ELBND", "data": elbnd, "line": ":k"},
-        {"name": "ERR", "data": e, "line": "k"}
-        # {"name": "SE", "data": se, "line": "r"}, # will be enabled in final test
+        {"name": "ELBND", "data": elbnd, "line": "k"},
+        {"name": "ERR", "data": e, "line": ":k"},
+        # {"name": "SE", "data": se, "line": ".k"}, # will be enabled in final test
     ]
 
     # methods = [
@@ -248,7 +252,7 @@ for setup in setups:
 
     # plotting
     for method in methods:
-        plt.plot(1 - method["spe"], method["sen"], method["line"], label=method["name"])
+        plt.plot(1 - method["spe"], method["sen"], method["line"], label=method["name"], linewidth=2.0)
 
     plt.legend(loc=4)
     plt.title("Drift type: " + setup["drift_label"])

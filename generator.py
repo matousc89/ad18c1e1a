@@ -93,7 +93,7 @@ setups = [
     {"drift":"both", "plot_pos": 224, "drift_label": "ramp + sinus_waves"},
 ]
 
-plt.figure(figsize=(15,7.5))
+plt.figure(figsize=(15,11))
 
 
 for setup in setups:
@@ -122,7 +122,7 @@ for setup in setups:
         d += signalz.sinus(total_len, period=100000, amplitude=4)
 
 
-    print("SNR: ", SNR(d,v))
+    # print("SNR: ", SNR(d,v))
 
 
     ## plot of changes in data changes
@@ -188,8 +188,8 @@ for setup in setups:
     ## DATA FOR REPRESENTATION
     methods = [
         {"name": "LE", "data": le, "line": "--k"},
-        {"name": "ELBND", "data": elbnd, "line": ":k"},
-        {"name": "ERR", "data": e, "line": "k"}
+        {"name": "ELBND", "data": elbnd, "line": "k"},
+        {"name": "ERR", "data": e, "line": ":k"}
         # {"name": "SE", "data": se, "line": "r"}, # will be enabled in final test
     ]
     # methods = [
@@ -222,7 +222,7 @@ for setup in setups:
 
     # plotting
     for method in methods:
-        plt.plot(1 - method["spe"], method["sen"], method["line"], label=method["name"])
+        plt.plot(1 - method["spe"], method["sen"], method["line"], label=method["name"], linewidth=2.0)
 
     plt.legend(loc=4)
     plt.title("Drift type: " + setup["drift_label"])

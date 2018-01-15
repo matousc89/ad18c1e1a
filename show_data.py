@@ -3,6 +3,11 @@ import matplotlib.pylab as plt
 import signalz
 import padasip as pa
 
+"""
+No text
+"""
+
+
 setups = [
     {"drift": "none", "plot_pos": 221, "drift_label": "none"},
     {"drift":"ramp", "plot_pos": 222, "drift_label": "ramp"},

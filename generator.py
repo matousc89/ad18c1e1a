@@ -159,7 +159,7 @@ for setup in setups:
     ## SAMPLE ENTROPY STUFF - too slow to be enabled all the time
 
     # get SE
-    # se = sample_entropy(d, m=2)
+    se = sample_entropy(d, m=2)
 
     # FUZZY SYSTEMS
     # ....
@@ -189,8 +189,8 @@ for setup in setups:
     methods = [
         {"name": "LE", "data": le, "line": "--k"},
         {"name": "ELBND", "data": elbnd, "line": "k"},
-        {"name": "ERR", "data": e, "line": ":k"}
-        # {"name": "SE", "data": se, "line": "r"}, # will be enabled in final test
+        {"name": "ERR", "data": e, "line": ":k"},
+        {"name": "SE", "data": se, "line": ".-k"}, # will be enabled in final test
     ]
     # methods = [
     #     {"name": "LE", "data": le, "line": "b"},
@@ -260,5 +260,5 @@ for setup in setups:
     # plt.show()
 
 plt.tight_layout()
-plt.savefig("figs/fig1.png")
+plt.savefig("figs/fig1s.png")
 plt.show()
